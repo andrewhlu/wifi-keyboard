@@ -69,6 +69,10 @@ int main(int argc, char* argv[]) {
                         exit(1);
                 }
             }
+            else if(buffer[8] - 0 == 17) {
+                // This corresponds to a Caps Lock or Num Lock command.
+                // Bit 12 tells you what the new value is
+            }
             else if(buffer[8] - 0 == 0) {
                 // Do nothing
             }

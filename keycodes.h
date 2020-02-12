@@ -233,7 +233,7 @@ const char* keycodes[] = {
     "Left Alt",
     "Left GUI",
     "Right Ctrl",
-    "Right Shift"
+    "Right Shift",
     "Right Alt", // 230
     "Right GUI",
     "Media Play / Pause",

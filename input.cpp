@@ -3,6 +3,8 @@
 #include <string>
 #include <stdlib.h>
 #include <thread>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include "keycodes.h"
 using namespace std;
 
@@ -20,6 +22,26 @@ void printBuffer(char buffer[]) {
 }
 
 int main(int argc, char* argv[]) {
+    // Check for valid arguments
+    if(argc != 3) {
+        printf("Usage %s ip port\n", argv[0]);
+        exit(1);
+    }
+
+    // Set up socket
+    char* server_ip = argv[1];
+    int port = atoi(argv[2]);
+
+    int socket_id = socket(AF_INET, SOCK_STREAM, 0);
+
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr(server_ip);
+    server_address.sin_port = htons(port);
+
+    // Initialize socket
+    int connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
+
     // First, remove the existing log
     system("rm /home/pi/wifi-keyboard/test.log");
 
@@ -94,6 +116,9 @@ int main(int argc, char* argv[]) {
             ifs.seekg(position);
         }
     }
+
+    close(connection_socket_id);
+    close(socket_id);
 
     return 0;
 }

@@ -1,30 +1,29 @@
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# Setting up connection and bind to a port
-# s = socket.socket()
-port = 11111
-s.bind(('', port))
+from socket import *
 
+# Set up TCP connection and bind to a port
+s = socket(AF_INET,SOCK_STREAM)
+port = 8080
+s.bind(('', port))
 s.listen(1)      
-print "socket is listening"            
-  
-# a forever loop until we interrupt it or  
-# an error occurs 
+print "socket is listening"
+
+# Wait for an incoming connection
+print "Waiting for new connection"
+
+# Keep receiving input until it's over.
 while True:
-   # Establish connection with client. 
    c, addr = s.accept()
    print 'Got connection from', addr 
 
-   #print c.recv(1024)
-   packet = c.recv(1024)
-   info = b(packet).decode()
-   if(info[] == 0)
+   while True:
+      packet = c.recv(1024)
 
-   else if(info[] == 1)
+      # Check to see if the connection is still active
+      if not packet: 
+         print "Connection closed"
+         break
 
-   else
+      character = ord(packet[0])
+      action = ord(packet[1])
 
-   
-
-   # Close the connection with the client 
-   c.close() 
+      print "Character: " + str(character) + ", Action: " + str(action)

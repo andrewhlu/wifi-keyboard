@@ -1,10 +1,12 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include <stdlib.h>
 #include <thread>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include "keycodes.h"
 using namespace std;
 
@@ -66,6 +68,10 @@ int main(int argc, char* argv[]) {
     ifs.seekg(0, ifs.end);
     streampos position = ifs.tellg();
 
+    // Create buffer to hold the message to send
+    char keyToSend = 0;
+    char actionToSend = 0;
+
     while(true) {
         // Read 16 bytes at a time
         char buffer[16];
@@ -73,23 +79,41 @@ int main(int argc, char* argv[]) {
             // Print action
             if(buffer[8] - 0 == 4) {
                 cout << "Selecting key '" << keycodeToString(buffer[12] - 0) << "'" << endl;
+                // Clear keyToSend
+                memset(&keyToSend, 0, sizeof(keyToSend));
+                keyToSend = buffer[12] - 0;
             }
             else if(buffer[8] - 0 == 1) {
+                // Clear actionToSend
+                memset(&actionToSend, 0, sizeof(actionToSend));
                 switch (buffer[12] - 0) {
                     case 0: 
                         cout << "Key is released" << endl;
+                        actionToSend = 3;
                         break;
                     case 1: 
                         cout << "Key is pressed" << endl;
+                        actionToSend = 1;
                         break;
                     case 2: 
                         cout << "Key is held" << endl;
+                        actionToSend = 2;
                         break;
                     default: 
                         cout << "An unknown key action occurred." << endl;
                         printBuffer(buffer);
                         exit(1);
                 }
+
+                // Set up message for sending
+                char message[2];
+                memset(message, 0, sizeof(message));
+                // sprintf(message, "%c%c", keyToSend, actionToSend);
+                message[0] = keyToSend;
+                message[1] = actionToSend;
+
+                // Send message
+                send(socket_id, message, sizeof(message), 0);
             }
             else if(buffer[8] - 0 == 17) {
                 // This corresponds to a Caps Lock or Num Lock command.
@@ -116,7 +140,7 @@ int main(int argc, char* argv[]) {
             ifs.seekg(position);
         }
     }
-
+    
     close(connection_socket_id);
     close(socket_id);
 

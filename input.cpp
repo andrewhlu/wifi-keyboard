@@ -34,9 +34,13 @@ int main(int argc, char* argv[]) {
     char* server_ip = argv[1];
     int port = atoi(argv[2]);
     string type = argv[3];
+
+    int socket_id = 0;
+    int connection_socket_id = 0;
+
     // If the connection is TCP
     if(type == "TCP"){ 
-        int socket_id = socket(AF_INET, SOCK_STREAM, 0);
+        socket_id = socket(AF_INET, SOCK_STREAM, 0);
 
         struct sockaddr_in server_address;
         server_address.sin_family = AF_INET;
@@ -44,11 +48,11 @@ int main(int argc, char* argv[]) {
         server_address.sin_port = htons(port);
 
         // Initialize socket
-        int connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
+        connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
     }
     // If the connection is UDP
     else if(type == "UDP"){
-        int socket_id = socket(AF_INET, SOCK_DGRAM, 0);
+        socket_id = socket(AF_INET, SOCK_DGRAM, 0);
 
         struct sockaddr_in server_address;
         server_address.sin_family = AF_INET;

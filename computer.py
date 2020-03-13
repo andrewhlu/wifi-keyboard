@@ -2,6 +2,7 @@ from socket import *
 import win32api
 import win32con
 import time
+import sys
 
 # https://gist.github.com/chriskiehl/2906125
 VK_CODE = {42:0x08,
@@ -171,38 +172,58 @@ def release(*args):
    for i in args:
       win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
 
-# Set up TCP connection and bind to a port
-s = socket(AF_INET,SOCK_STREAM)
-port = 8080
-s.bind(('', port))
-s.listen(1)      
-print("socket is listening")
+# Check for input arguments
+if len(sys.argv) != 3:
+   sys.exit("Usage " + str(sys.argv[0]) + " port type('UDP' or 'TCP')")
+else:
+   # Set up connection and bind to a port
+   if str(sys.argv[2]) == "TCP":
+      print("Setting up TCP socket on port " + str(sys.argv[1]))
+      s = socket(AF_INET,SOCK_STREAM)
+   elif str(sys.argv[2]) == "UDP":
+      print("Setting up UDP socket on port " + str(sys.argv[1]))
+      s = socket(AF_INET,SOCK_DGRAM)
+   else:
+      sys.exit("Unknown type: '" + str(sys.argv[2]) + "', must be either 'UDP' or 'TCP'")
 
-# Wait for an incoming connection
-print("Waiting for new connection")
+   port = int(sys.argv[1])
+   s.bind(('', port))
 
-# Keep receiving input until it's over.
-while True:
-   c, addr = s.accept()
-   print("Got connection from " + str(addr[0]) + ", Port " + str(addr[1])) 
+   if str(sys.argv[2]) == "TCP":
+      s.listen(1)
+   
+   print("socket is listening")
 
+   # Wait for an incoming connection
+   print("Waiting for new connection")
+
+   # Keep receiving input until it's over.
    while True:
-      packet = c.recv(1024)
+      if str(sys.argv[2]) == "TCP":
+         c, addr = s.accept()
+         print("Got connection from " + str(addr[0]) + ", Port " + str(addr[1])) 
 
-      # Check to see if the connection is still active
-      if not packet: 
-         print("Connection closed")
-         break
+      while True:
+         if str(sys.argv[2]) == "TCP":
+            packet = c.recv(1024)
+         elif str(sys.argv[2]) == "UDP":
+            message = s.recvfrom(1024)
+            packet = message[0]
 
-      character = packet[0]
-      action = packet[1]
+         # Check to see if the connection is still active
+         if not packet: 
+            print("Connection closed")
+            break
 
-      if action == 1:
-         pressAndHold(character)
-      elif action == 2:
-         release(character)
-         pressAndHold(character)
-      elif action == 3:
-         release(character)
+         character = packet[0]
+         action = packet[1]
 
-      print("Character: " + str(character) + ", Action: " + str(action))
+         if action == 1:
+            pressAndHold(character)
+         elif action == 2:
+            release(character)
+            pressAndHold(character)
+         elif action == 3:
+            release(character)
+
+         print("Character: " + str(character) + ", Action: " + str(action))

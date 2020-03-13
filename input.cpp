@@ -26,7 +26,7 @@ void printBuffer(char buffer[]) {
 int main(int argc, char* argv[]) {
     // Check for valid arguments
     if(argc != 4) {
-        printf("Usage %s ip port\n", argv[0]);
+        printf("Usage %s ip port type('UDP' or 'TCP')\n", argv[0]);
         exit(1);
     }
 
@@ -41,28 +41,24 @@ int main(int argc, char* argv[]) {
     // If the connection is TCP
     if(type == "TCP"){ 
         socket_id = socket(AF_INET, SOCK_STREAM, 0);
-
-        struct sockaddr_in server_address;
-        server_address.sin_family = AF_INET;
-        server_address.sin_addr.s_addr = inet_addr(server_ip);
-        server_address.sin_port = htons(port);
-
-        // Initialize socket
-        connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
     }
     // If the connection is UDP
     else if(type == "UDP"){
         socket_id = socket(AF_INET, SOCK_DGRAM, 0);
-
-        struct sockaddr_in server_address;
-        server_address.sin_family = AF_INET;
-        server_address.sin_addr.s_addr = inet_addr(server_ip);
-        server_address.sin_port = htons(port);
-
-        bind(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
     }
     else{
-        cout << "Invalid Argument" << endl;
+        cout << "Invalid Type Argument: '" << type << "'" << endl;
+        exit(1);
+    }
+
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = inet_addr(server_ip);
+    server_address.sin_port = htons(port);
+
+    if(type == "TCP"){ 
+        // Initialize socket
+        connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
     }
 
     // First, remove the existing log
@@ -137,7 +133,7 @@ int main(int argc, char* argv[]) {
                 if(type == "TCP")
                     send(socket_id, message, sizeof(message), 0);
                 else
-                    sendto(socket_id, message, sizeof(message), 0);
+                    sendto(socket_id, message, sizeof(message), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
             }
             else if(buffer[8] - 0 == 17) {
                 // This corresponds to a Caps Lock or Num Lock command.

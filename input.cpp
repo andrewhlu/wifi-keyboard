@@ -25,24 +25,41 @@ void printBuffer(char buffer[]) {
 
 int main(int argc, char* argv[]) {
     // Check for valid arguments
-    if(argc != 3) {
+    if(argc != 4) {
         printf("Usage %s ip port\n", argv[0]);
         exit(1);
     }
 
-    // Set up socket
+    // Set up socket1
     char* server_ip = argv[1];
     int port = atoi(argv[2]);
+    string type = argv[3];
+    // If the connection is TCP
+    if(type == "TCP"){ 
+        int socket_id = socket(AF_INET, SOCK_STREAM, 0);
 
-    int socket_id = socket(AF_INET, SOCK_STREAM, 0);
+        struct sockaddr_in server_address;
+        server_address.sin_family = AF_INET;
+        server_address.sin_addr.s_addr = inet_addr(server_ip);
+        server_address.sin_port = htons(port);
 
-    struct sockaddr_in server_address;
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = inet_addr(server_ip);
-    server_address.sin_port = htons(port);
+        // Initialize socket
+        int connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
+    }
+    // If the connection is UDP
+    else if(type == "UDP"){
+        int socket_id = socket(AF_INET, SOCK_DGRAM, 0);
 
-    // Initialize socket
-    int connection_socket_id = connect(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
+        struct sockaddr_in server_address;
+        server_address.sin_family = AF_INET;
+        server_address.sin_addr.s_addr = inet_addr(server_ip);
+        server_address.sin_port = htons(port);
+
+        bind(socket_id, (struct sockaddr *)&server_address, sizeof(server_address));
+    }
+    else{
+        cout << "Invalid Argument" << endl;
+    }
 
     // First, remove the existing log
     system("rm /home/pi/wifi-keyboard/test.log");
@@ -113,7 +130,10 @@ int main(int argc, char* argv[]) {
                 message[1] = actionToSend;
 
                 // Send message
-                send(socket_id, message, sizeof(message), 0);
+                if(type == "TCP")
+                    send(socket_id, message, sizeof(message), 0);
+                else
+                    sendto(socket_id, message, sizeof(message), 0);
             }
             else if(buffer[8] - 0 == 17) {
                 // This corresponds to a Caps Lock or Num Lock command.

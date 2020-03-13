@@ -138,17 +138,17 @@ VK_CODE = {42:0x08,
            'play_key':0xFA,
            'zoom_key':0xFB,
            'clear_key':0xFE,
-           '+':0xBB,
-           54:0xBC,
-           45:0xBD,
-           55:0xBE,
-           56:0xBF,
-           53:0xC0,
-           51:0xBA,
-           47:0xDB,
-           49:0xDC,
-           48:0xDD,
-           52:0xDE}
+            46:0xBB,
+            54:0xBC,
+            45:0xBD,
+            55:0xBE,
+            56:0xBF,
+            53:0xC0,
+            51:0xBA,
+            47:0xDB,
+            49:0xDC,
+            48:0xDD,
+            52:0xDE}
 
 def pressAndHold(*args):
     '''

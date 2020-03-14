@@ -29,6 +29,10 @@ int main(int argc, char* argv[]) {
         printf("Usage %s ip port type('UDP' or 'TCP')\n", argv[0]);
         exit(1);
     }
+    // Symmetric key
+    char symmetric_key [2];
+    symmetric_key[0] = 0x95;
+    symmetric_key[1] = 0x6A;
 
     // Set up socket1
     char* server_ip = argv[1];
@@ -126,8 +130,10 @@ int main(int argc, char* argv[]) {
                 char message[2];
                 memset(message, 0, sizeof(message));
                 // sprintf(message, "%c%c", keyToSend, actionToSend);
-                message[0] = keyToSend;
-                message[1] = actionToSend;
+
+                // Create the buffer and encrypt it with bit-wise XOR
+                message[0] = keyToSend ^ symmetric_key[0];
+                message[1] = actionToSend ^ symmetric_key[1];
 
                 // Send message
                 if(type == "TCP")

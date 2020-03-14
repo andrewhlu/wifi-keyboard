@@ -2,6 +2,7 @@ from socket import *
 import win32api
 import win32con
 import time
+import math
 import sys
 
 # https://gist.github.com/chriskiehl/2906125
@@ -172,6 +173,8 @@ def release(*args):
    for i in args:
       win32api.keybd_event(VK_CODE[i],0 ,win32con.KEYEVENTF_KEYUP ,0)
 
+key = 0x956A
+
 # Check for input arguments
 if len(sys.argv) != 3:
    sys.exit("Usage " + str(sys.argv[0]) + " port type('UDP' or 'TCP')")
@@ -210,13 +213,15 @@ else:
             message = s.recvfrom(1024)
             packet = message[0]
 
+         packet = int.from_bytes(packet, "big") ^ key
+
          # Check to see if the connection is still active
          if not packet: 
             print("Connection closed")
             break
 
-         character = packet[0]
-         action = packet[1]
+         character = math.floor(packet / 256)
+         action = packet % 256
 
          if action == 1:
             pressAndHold(character)

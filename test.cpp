@@ -56,9 +56,9 @@ void decrypt(int* encrypted, char* decrypted, int n, int key, int len) {
 }
 
 int main(int argc, char *argv[]) {
-    int newE = 211;
-    int newN = 232;
-    int newD = 183;
+    int newE = 25;
+    int newN = 203;
+    int newD = 121;
 
     char message[1024] = "abcdefghijklmnop";
     int encrypted[1024] = {0};

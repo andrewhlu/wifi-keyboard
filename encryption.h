@@ -4,15 +4,6 @@
 #include <ctime>
 using namespace std;
 
-int getPrimeNumber() {
-    srand(time(0));
-    int primeNum = rand() % 100;
-    while(!isPrime(primeNum)) {
-        primeNum--;
-    }
-    return primeNum;
-}
-
 bool isPrime(int num) {
     if(num <= 3) {
         return num > 1;
@@ -33,13 +24,13 @@ bool isPrime(int num) {
     return true;
 }
 
-int getRelativePrime(int n, int z) {
+int getPrimeNumber() {
     srand(time(0));
-    int relativeNum = rand() % n;
-    while(gcd(relativeNum, z) > 1) {
-        relativeNum--;
+    int primeNum = rand() % 100;
+    while(!isPrime(primeNum)) {
+        primeNum--;
     }
-    return relativeNum;
+    return primeNum;
 }
 
 int gcd(int a, int b) {
@@ -52,6 +43,15 @@ int gcd(int a, int b) {
         a = b;
         b = t;
     }
+}
+
+int getRelativePrime(int n, int z) {
+    srand(time(0));
+    int relativeNum = rand() % n;
+    while(gcd(relativeNum, z) > 1) {
+        relativeNum--;
+    }
+    return relativeNum;
 }
 
 int getExactDivisible(int e, int z) {
@@ -74,10 +74,8 @@ void encrypt(char* message, int* encrypted, int n, int key, int len) {
         encrypted[i] = k;
     }
 
-    encrypted[len] = -1;
-
     cout << "Encrypted Message: '";
-    for(int i = 0; encrypted[i] != -1; i++) {
+    for(int i = 0; i < len; i++) {
         cout << encrypted[i] << " ";
     }
     cout << "'" << endl;
@@ -94,11 +92,9 @@ void decrypt(int* encrypted, char* decrypted, int n, int key, int len) {
 
         decrypted[i] = k;
     }
-    
-    decrypted[len] = -1;
 
     cout << "Decrypted Message: '";
-    for(int i = 0; decrypted[i] != -1; i++) {
+    for(int i = 0; i < len; i++) {
         cout << decrypted[i];
     }
     cout << "'" << endl;

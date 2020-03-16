@@ -14,6 +14,12 @@ void convertToChar(int src, char* dst) {
     dst[1] = src % 256;
 }
 
+void convertToCharArray(int* src, char* dst, int lenIntArr) {
+    for(int i = 0; i < lenIntArr; i++) {
+        convertToChar(src[i], &(dst[2*i]));
+    }
+}
+
 int convertToInt(char* src) {
     return (src[0] - 0) * 256 + (src[1] - 0);
 }
@@ -39,7 +45,6 @@ bool isPrime(int num) {
 }
 
 int getPrimeNumber() {
-    srand(time(0));
     int primeNum = rand() % 100;
     while(!isPrime(primeNum)) {
         primeNum--;
@@ -60,7 +65,6 @@ int gcd(int a, int b) {
 }
 
 int getRelativePrime(int n, int z) {
-    srand(time(0));
     int relativeNum = rand() % n;
     while(gcd(relativeNum, z) > 1) {
         relativeNum--;

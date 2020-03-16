@@ -29,28 +29,29 @@ void printBuffer(char buffer[]) {
 int main(int argc, char* argv[]) {
     srand(time(0));
     // Check for valid arguments
-    if(argc != 4) {
-        printf("Usage %s ip port type('UDP' or 'TCP')\n", argv[0]);
+    if(argc != 5) {
+        printf("Usage %s ip port type('UDP' or 'TCP') encryption('true', 'false')\n", argv[0]);
         exit(1);
     }
+    bool encryption = false;
+    if(string(argv[4]) == "true") {
+        encryption = true;
+    }
+
     // Symmetric key
     char symmetric_key [2];
     symmetric_key[0] = getRandomChar();
     symmetric_key[1] = getRandomChar();
 
     cout << "The symmetric key is " << symmetric_key[0] - 0 << " " << symmetric_key[1] - 0 << endl;
-
+    
     int prime1 = getPrimeNumber();
     int prime2 = getPrimeNumber();
-
-    cout << "Prime Numbers: " << prime1 << ", " << prime2 << endl;
 
     int my_n = prime1 * prime2;
     int my_z = (prime1 - 1) * (prime2 - 1);
     int my_e = getRelativePrime(my_n, my_z);
     int my_d = getExactDivisible(my_e, my_z);
-
-    cout << "N: " << my_n << ", Z: " << my_z << ", E: " << my_e << ", D: " << my_d << endl;
 
     char keyboard_n[2];
     char keyboard_e[2];
@@ -59,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     char computer_n[2] = {0};
     char computer_e[2] = {0};
-
+    
     // Set up socket1
     char* server_ip = argv[1];
     int port = atoi(argv[2]);
@@ -118,47 +119,45 @@ int main(int argc, char* argv[]) {
     ifs.seekg(0, ifs.end);
     streampos position = ifs.tellg();
 
+    if(encryption){
+        // Send (n,e) 
     // Send (n,e) 
-    if(type == "TCP"){
-        send(socket_id, keyboard_n, sizeof(keyboard_n), 0);
-        send(socket_id, keyboard_e, sizeof(keyboard_e), 0);
-    }
-    else{
-        sendto(socket_id, keyboard_n, sizeof(keyboard_n), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-        sendto(socket_id, keyboard_e, sizeof(keyboard_e), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-    }
-    if(type == "TCP"){
-        read(socket_id, computer_n, sizeof(computer_n));
-        read(socket_id, computer_e, sizeof(computer_e));
-    }
-    else{
-        recvfrom(socket_id, computer_n, sizeof(computer_n), 0, (struct sockaddr *)&client_address, &return_len);
-    }
+        // Send (n,e) 
+        if(type == "TCP"){
+            send(socket_id, keyboard_n, sizeof(keyboard_n), 0);
+            send(socket_id, keyboard_e, sizeof(keyboard_e), 0);
+        }
+        else{
+            sendto(socket_id, keyboard_n, sizeof(keyboard_n), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+            sendto(socket_id, keyboard_e, sizeof(keyboard_e), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+        }
+        if(type == "TCP"){
+            read(socket_id, computer_n, sizeof(computer_n));
+            read(socket_id, computer_e, sizeof(computer_e));
+        }
+        else{
+            recvfrom(socket_id, computer_n, sizeof(computer_n), 0, (struct sockaddr *)&client_address, &return_len);
+        }
 
-    char f_encrypted_m[2] = {0};
-    char s_encrypted_m[2] = {0};
+        int f_encrypted[2] = {0};
+        char f_encrypted_m[4] = {0};
+        int s_encrypted[4] = {0};
+        char s_encrypted_m[8] = {0};
+        
+        encrypt(symmetric_key, f_encrypted, my_n, my_d, 2);
+        convertToCharArray(f_encrypted, f_encrypted_m, 2);
+
+        encrypt(f_encrypted_m,s_encrypted, convertToInt(computer_n), convertToInt(computer_e), 4);
+        convertToCharArray(s_encrypted, s_encrypted_m, 4);
+
+        if(type == "TCP"){
+            send(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0);
+        }
+        else{
+            sendto(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+        }
+    }
     
-    cout << "My N is " << my_n << endl;
-    cout << "My E is " << my_e << endl;
-    encrypt(symmetric_key, f_encrypted_m, my_n, my_d, 2);
-    encrypt(f_encrypted_m, s_encrypted_m, my_n, my_e, 2);
-    cout << "Computer N is " << convertToInt(computer_n) << endl;
-    cout << "Computer E is " << convertToInt(computer_e) << endl;
-    // encrypt(f_encrypted_m,s_encrypted_m, convertToInt(computer_n), convertToInt(computer_e), 2);
-
-    // if(type == "TCP"){
-    //     send(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0);
-    // }
-    // else{
-    //     sendto(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-    // }
-
-    if(type == "TCP"){
-        send(socket_id, f_encrypted_m, sizeof(f_encrypted_m), 0);
-    }
-    else{
-        sendto(socket_id, f_encrypted_m, sizeof(f_encrypted_m), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-    }
     // Create buffer to hold the message to send
     char keyToSend = 0;
     char actionToSend = 0;
@@ -199,11 +198,16 @@ int main(int argc, char* argv[]) {
                 // Set up message for sending
                 char message[2];
                 memset(message, 0, sizeof(message));
-                // sprintf(message, "%c%c", keyToSend, actionToSend);
 
-                // Create the buffer and encrypt it with bit-wise XOR
-                message[0] = keyToSend ^ symmetric_key[0];
-                message[1] = actionToSend ^ symmetric_key[1];
+                if(encryption){
+                    // Create the buffer and encrypt it with bit-wise XOR
+                    message[0] = keyToSend ^ symmetric_key[0];
+                    message[1] = actionToSend ^ symmetric_key[1];
+                }
+                else{
+                    message[0] = keyToSend;
+                    message[1] = actionToSend;
+                }               
 
                 // Send message
                 if(type == "TCP")

@@ -42,8 +42,6 @@ int main(int argc, char* argv[]) {
     char symmetric_key [2];
     symmetric_key[0] = getRandomChar();
     symmetric_key[1] = getRandomChar();
-
-    cout << "The symmetric key is " << symmetric_key[0] - 0 << " " << symmetric_key[1] - 0 << endl;
     
     int prime1 = getPrimeNumber();
     int prime2 = getPrimeNumber();

@@ -14,10 +14,10 @@ using namespace std;
 //function to encrypt the message
 void encrypt(char* message, int* encrypted, int n, int key, int len) {
     for(int i = 0; i < len; i++) {
-        double k = 1;
+        int k = 1;
 
         for(int j = 0; j < key; j++) {
-            k = fmod((k * (message[i] - 0)), n);
+            k = (k * (message[i] - 0)) % n;
         }
 
         cout << "Original: " << message[i] - 0 << ", K: " << k << endl;
@@ -36,10 +36,10 @@ void encrypt(char* message, int* encrypted, int n, int key, int len) {
 //function to decrypt the message
 void decrypt(int* encrypted, char* decrypted, int n, int key, int len) {
     for(int i = 0; i < len; i++) {
-        double k = 1;
+        int k = 1;
 
         for(int j = 0; j < key; j++) {
-            k = fmod((k * encrypted[i]), n);
+            k = (k * encrypted[i]) % n;
         }
 
         cout << "K: " << k << endl;

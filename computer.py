@@ -235,8 +235,6 @@ def decryptToIntArray(encrypted, n, key, length):
 		k = 1
 		for j in range(0, key):
 			k = (k * encrypted[i]) % n
-			# k = k * encrypted[i]
-			# k = k % n
 		print("K: " + str(k) + ", N: " + str(n))
 		returnArr[i] = k
 	return returnArr
@@ -248,32 +246,27 @@ def decryptToInt(encrypted, n, key, length):
 		k = 1
 		for j in range(0, key):
 			k = (k * encrypted[i]) % n
-			# k = k * encrypted[i]
-			# k = k % n
 		print("K: " + str(k) + ", N: " + str(n))
 		message = message + k << 8 * (length - i - 1)
 	return message
 
 # Check for input arguments
-if len(sys.argv) != 3:
-	sys.exit("Usage " + str(sys.argv[0]) + " port type('UDP' or 'TCP')")
+if len(sys.argv) != 4:
+	sys.exit("Usage " + str(sys.argv[0]) + " port type('UDP' or 'TCP') encryption")
 else:
-	# Create public-private encryption key
-	prime1 = getPrimeNumber()
-	prime2 = getPrimeNumber()
+	encryption = False
+	if str(sys.argv[3]) == "true":
+		encryption = True
 
-	keyN = prime1 * prime2
-	keyZ = (prime1 - 1) * (prime2 - 1)
-	keyE = getRelativePrime(keyN, keyZ)
-	keyD = getExactDivisible(keyE, keyZ)
+	if encryption:
+		# Create public-private encryption key
+		prime1 = getPrimeNumber()
+		prime2 = getPrimeNumber()
 
-	print("prime1: " + str(prime1))
-	print("prime2: " + str(prime2))
-	print("Z: " + str(keyZ))
-	print("E: " + str(keyE))
-	print("N: " + str(keyN))
-	print("D: " + str(keyD))
-	print("------------------")
+		keyN = prime1 * prime2
+		keyZ = (prime1 - 1) * (prime2 - 1)
+		keyE = getRelativePrime(keyN, keyZ)
+		keyD = getExactDivisible(keyE, keyZ)
 	 
 	# Set up the socket connection
 	if str(sys.argv[2]) == "TCP":
@@ -302,54 +295,53 @@ else:
 		addr = None
 		if str(sys.argv[2]) == "TCP":
 			c, addr = s.accept()
-			print("Got connection from " + str(addr[0]) + ", Port " + str(addr[1])) 
+			print("Got connection from " + str(addr[0]) + ", Port " + str(addr[1]))
 
-		# Start by receiving N from keyboard
-		if str(sys.argv[2]) == "TCP":
-			packet = c.recv(1024)
-		elif str(sys.argv[2]) == "UDP":
-			message, addr = s.recvfrom(1024)
-			packet = message[0]
-			
-		keyboardN = int.from_bytes(packet, "big")
+		if encryption:
+			keyboardN = None
+			# Start by receiving N from keyboard
+			if str(sys.argv[2]) == "TCP":
+				packet = c.recv(1024)
+				keyboardN = int.from_bytes(packet, "big")
+			elif str(sys.argv[2]) == "UDP":
+				message, addr = s.recvfrom(1024)
+				keyboardN = message[0]
 
-		# Next, receive E from keyboard
-		if str(sys.argv[2]) == "TCP":
-			packet = c.recv(1024)
-		elif str(sys.argv[2]) == "UDP":
-			message = s.recvfrom(1024)
-			packet = message[0]
+			# Next, receive E from keyboard
+			keyboardE = None
+			if str(sys.argv[2]) == "TCP":
+				packet = c.recv(1024)
+				keyboardE = int.from_bytes(packet, "big")
+			elif str(sys.argv[2]) == "UDP":
+				message = s.recvfrom(1024)
+				keyboardE = message[0]
 
-		keyboardE = int.from_bytes(packet, "big")
+			# Next, send your N to keyboard
+			if str(sys.argv[2]) == "TCP":
+				c.send(keyN.to_bytes(2, "big"))
+			elif str(sys.argv[2]) == "UDP":
+				s.sendto(keyN.to_bytes(2, "big"), addr)
 
-		# Next, send your N to keyboard
-		if str(sys.argv[2]) == "TCP":
-			c.send(keyN.to_bytes(2, "big"))
-		elif str(sys.argv[2]) == "UDP":
-			c.sendto(keyN.to_bytes(2, "big"), addr)
+			# Next, send your E to keyboard
+			if str(sys.argv[2]) == "TCP":
+				c.send(keyE.to_bytes(2, "big"))
+			elif str(sys.argv[2]) == "UDP":
+				s.sendto(keyE.to_bytes(2, "big"), addr)
 
-		# Next, send your E to keyboard
-		if str(sys.argv[2]) == "TCP":
-			c.send(keyE.to_bytes(2, "big"))
-		elif str(sys.argv[2]) == "UDP":
-			c.sendto(keyE.to_bytes(2, "big"), addr)
+			# Finally, receive symmetric key from keyboard and decrypt it
+			if str(sys.argv[2]) == "TCP":
+				packet = c.recv(1024)
+			elif str(sys.argv[2]) == "UDP":
+				message = s.recvfrom(1024)
+				packet = message[0]
 
-		# Finally, receive symmetric key from keyboard and decrypt it
-		if str(sys.argv[2]) == "TCP":
-			packet = c.recv(1024)
-		elif str(sys.argv[2]) == "UDP":
-			message = s.recvfrom(1024)
-			packet = message[0]
+			# First, decrypt using my private key. Then, decrypt using keyboard's public key.
+			firstArray = convertByteArrayToIntArray(packet, 8)
+			firstDecrypt = decryptToIntArray(firstArray, keyN, keyD, 4)
+			encrypted = convertIntArray(firstDecrypt, 4)
+			key = decryptToInt(encrypted, keyboardN, keyboardE, 2)
 
-		print("keyboardN: " + str(keyboardN) + ", keyboardE: " + str(keyboardE))
-
-		# First, decrypt using my private key. Then, decrypt using keyboard's public key.
-		firstArray = convertByteArrayToIntArray(packet, 8)
-		firstDecrypt = decryptToIntArray(firstArray, keyN, keyD, 4)
-		encrypted = convertIntArray(firstDecrypt, 4)
-		key = decryptToInt(encrypted, keyboardN, keyboardE, 2)
-
-		print("The decrypted key is: " + str(key))
+			print("The decrypted key is: " + str(key))
 
 		while True:
 			if str(sys.argv[2]) == "TCP":
@@ -358,7 +350,10 @@ else:
 				message = s.recvfrom(1024)
 				packet = message[0]
 
-			packet = int.from_bytes(packet, "big") ^ key
+			if encryption:
+				packet = int.from_bytes(packet, "big") ^ key
+			else:
+				packet = int.from_bytes(packet, "big")
 
 			# Check to see if the connection is still active
 			if not packet: 

@@ -207,8 +207,20 @@ def getExactDivisible(e, z):
         d += 1
     return d
 
-def encryption(message, n, e):
-    return pow(message, e) % n
+def decrypt(encrypted, n, key, length):
+	message = 0
+	for i in range(0, length):
+		print(encrypted[i])
+		k = 1
+		for j in range(0, key):
+			# k = (k * encrypted[i]) % n
+			k *= encrypted[i]
+			k = k % n
+		print("K: " + str(k) + ", N: " + str(n))
+		message = message + k << 8 * (length - i - 1)
+
+	print("Message: " + str(message))
+	return message.to_bytes(2, "big")
 
 # Check for input arguments
 if len(sys.argv) != 3:
@@ -219,9 +231,17 @@ else:
 	prime2 = getPrimeNumber()
 
 	keyN = prime1 * prime2
-	keyZ = (prime1 - 1) * (prime2 - 2)
+	keyZ = (prime1 - 1) * (prime2 - 1)
 	keyE = getRelativePrime(keyN, keyZ)
 	keyD = getExactDivisible(keyE, keyZ)
+
+	print("prime1: " + str(prime1))
+	print("prime2: " + str(prime2))
+	print("Z: " + str(keyZ))
+	print("E: " + str(keyE))
+	print("N: " + str(keyN))
+	print("D: " + str(keyD))
+	print("------------------")
 	 
 	# Set up the socket connection
 	if str(sys.argv[2]) == "TCP":
@@ -246,9 +266,56 @@ else:
 
 	# Keep receiving input until it's over.
 	while True:
+		# A new device is connected
+		addr = None
 		if str(sys.argv[2]) == "TCP":
 			c, addr = s.accept()
 			print("Got connection from " + str(addr[0]) + ", Port " + str(addr[1])) 
+
+		# Start by receiving N from keyboard
+		if str(sys.argv[2]) == "TCP":
+			packet = c.recv(1024)
+		elif str(sys.argv[2]) == "UDP":
+			message, addr = s.recvfrom(1024)
+			packet = message[0]
+			
+		keyboardN = int.from_bytes(packet, "big")
+
+		# Next, receive E from keyboard
+		if str(sys.argv[2]) == "TCP":
+			packet = c.recv(1024)
+		elif str(sys.argv[2]) == "UDP":
+			message = s.recvfrom(1024)
+			packet = message[0]
+
+		keyboardE = int.from_bytes(packet, "big")
+
+		# Next, send your N to keyboard
+		if str(sys.argv[2]) == "TCP":
+			c.send(keyN.to_bytes(2, "big"))
+		elif str(sys.argv[2]) == "UDP":
+			c.sendto(keyN.to_bytes(2, "big"), addr)
+
+		# Next, send your E to keyboard
+		if str(sys.argv[2]) == "TCP":
+			c.send(keyE.to_bytes(2, "big"))
+		elif str(sys.argv[2]) == "UDP":
+			c.sendto(keyE.to_bytes(2, "big"), addr)
+
+		# Finally, receive symmetric key from keyboard and decrypt it
+		if str(sys.argv[2]) == "TCP":
+			packet = c.recv(1024)
+		elif str(sys.argv[2]) == "UDP":
+			message = s.recvfrom(1024)
+			packet = message[0]
+
+		print("keyboardN: " + str(keyboardN) + ", keyboardE: " + str(keyboardE))
+
+		# First, decrypt using my private key. Then, decrypt using keyboard's public key.
+		# firstDecrypt = decrypt(packet, keyN, keyD, 2)
+		key = decrypt(packet, keyboardN, keyboardE, 2)
+
+		print("The decrypted key is: " + key)
 
 		while True:
 			if str(sys.argv[2]) == "TCP":

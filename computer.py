@@ -208,7 +208,6 @@ def getExactDivisible(e, z):
     return d
 
 def convertByteArrayToIntArray(bytearr, length):
-	print(len(bytearr))
 	i = 0
 	returnArr = [None] * int(length / 2)
 	while i < length:
@@ -231,22 +230,18 @@ def decryptToIntArray(encrypted, n, key, length):
 	message = 0
 	returnArr = [None] * length
 	for i in range(0, length):
-		print(encrypted[i])
 		k = 1
 		for j in range(0, key):
 			k = (k * encrypted[i]) % n
-		print("K: " + str(k) + ", N: " + str(n))
 		returnArr[i] = k
 	return returnArr
 
 def decryptToInt(encrypted, n, key, length):
 	message = 0
 	for i in range(0, length):
-		print(encrypted[i])
 		k = 1
 		for j in range(0, key):
 			k = (k * encrypted[i]) % n
-		print("K: " + str(k) + ", N: " + str(n))
 		message = message + k << 8 * (length - i - 1)
 	return message
 
@@ -340,8 +335,6 @@ else:
 			firstDecrypt = decryptToIntArray(firstArray, keyN, keyD, 4)
 			encrypted = convertIntArray(firstDecrypt, 4)
 			key = decryptToInt(encrypted, keyboardN, keyboardE, 2)
-
-			print("The decrypted key is: " + str(key))
 
 		while True:
 			if str(sys.argv[2]) == "TCP":

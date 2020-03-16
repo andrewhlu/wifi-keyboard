@@ -207,20 +207,52 @@ def getExactDivisible(e, z):
         d += 1
     return d
 
-def decrypt(encrypted, n, key, length):
+def convertByteArrayToIntArray(bytearr, length):
+	print(len(bytearr))
+	i = 0
+	returnArr = [None] * int(length / 2)
+	while i < length:
+		returnArr[int(i/2)] = convertBytesToInt(bytearr[i], bytearr[i+1])
+		i += 2
+	return returnArr
+
+def convertBytesToInt(byte1, byte2):
+	return byte1 * 256 + byte2
+
+def convertIntArray(intarr, length):
+	returnArr = [None] * int(length / 2)
+	i = 0
+	while i < length:
+		returnArr[int(i/2)] = intarr[i] * 256 + intarr[i+1]
+		i += 2
+	return returnArr
+
+def decryptToIntArray(encrypted, n, key, length):
+	message = 0
+	returnArr = [None] * length
+	for i in range(0, length):
+		print(encrypted[i])
+		k = 1
+		for j in range(0, key):
+			k = (k * encrypted[i]) % n
+			# k = k * encrypted[i]
+			# k = k % n
+		print("K: " + str(k) + ", N: " + str(n))
+		returnArr[i] = k
+	return returnArr
+
+def decryptToInt(encrypted, n, key, length):
 	message = 0
 	for i in range(0, length):
 		print(encrypted[i])
 		k = 1
 		for j in range(0, key):
-			# k = (k * encrypted[i]) % n
-			k *= encrypted[i]
-			k = k % n
+			k = (k * encrypted[i]) % n
+			# k = k * encrypted[i]
+			# k = k % n
 		print("K: " + str(k) + ", N: " + str(n))
 		message = message + k << 8 * (length - i - 1)
-
-	print("Message: " + str(message))
-	return message.to_bytes(2, "big")
+	return message
 
 # Check for input arguments
 if len(sys.argv) != 3:
@@ -312,10 +344,12 @@ else:
 		print("keyboardN: " + str(keyboardN) + ", keyboardE: " + str(keyboardE))
 
 		# First, decrypt using my private key. Then, decrypt using keyboard's public key.
-		# firstDecrypt = decrypt(packet, keyN, keyD, 2)
-		key = decrypt(packet, keyboardN, keyboardE, 2)
+		firstArray = convertByteArrayToIntArray(packet, 8)
+		firstDecrypt = decryptToIntArray(firstArray, keyN, keyD, 4)
+		encrypted = convertIntArray(firstDecrypt, 4)
+		key = decryptToInt(encrypted, keyboardN, keyboardE, 2)
 
-		print("The decrypted key is: " + key)
+		print("The decrypted key is: " + str(key))
 
 		while True:
 			if str(sys.argv[2]) == "TCP":

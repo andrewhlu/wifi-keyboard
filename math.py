@@ -50,7 +50,7 @@ prime1 = getPrimeNumber()
 prime2 = getPrimeNumber()
 
 keyN = prime1 * prime2
-keyZ = (prime1 - 1) * (prime2 - 2)
+keyZ = (prime1 - 1) * (prime2 - 1)
 keyE = getRelativePrime(keyN, keyZ)
 keyD = getExactDivisible(keyE, keyZ)
 

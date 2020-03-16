@@ -7,13 +7,11 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <ctime>
 #include "keycodes.h"
 #include "math.h"
+#include "encryption.h"
 using namespace std;
-
-long int my_e[50], d[50], temp[50], j;
-char en[2];
-int t, p1, p2, my_n;
 
 void startKeylog() {
     // Log all keyboard events
@@ -28,103 +26,8 @@ void printBuffer(char buffer[]) {
     cout << "'" << endl;
 }
 
-int prime(long int pr)
-{
-   int i;
-   j = sqrt(pr);
-   for(i = 2; i <= j; i++)
-   {
-      if(pr % i == 0)
-         return 0;
-   }
-   return 1;
- }
-
-long int cd(long int a)
-{
-   long int k = 1;
-   while(1)
-   {
-      k = k + t;
-      if(k % a == 0)
-         return(k/a);
-   }
-}
-
-void encryption_key(int t){
-    int k = 0;
-    for(int i = 2; i < t; i++){
-        if(t % i == 0)
-            continue;
-        int flag = prime(i);
-        if(flag == 1 && i != p1 && i != p2){
-            e[k] = i;
-            flag = cd(e[k]);
-            if(flag > 0){
-                d[k] = flag;
-                k++;
-            }
-            if(k == 99)
-                break;
-        }
-    }
-}
-
-//function to encrypt the message
-void encrypt(char* m, int n, long int* e)
-{
-   long int pt, ct, key = e[0], k, len;
-   int i = 0;
-   len = 2;
-
-   while(i != len)
-   {
-      pt = m[i];
-      pt = pt - 96;
-      k = 1;
-      for(j = 0; j < key; j++)
-      {
-         k = k * pt;
-         k = k % n;
-      }
-      temp[i] = k;
-      ct= k + 96;
-      en[i] = ct;
-      i++;
-   }
-   en[i] = -1;
-   cout << "\n\nTHE ENCRYPTED MESSAGE IS\n";
-   for(i=0; en[i] != -1; i++)
-      cout << en[i];
-}
-
-//function to decrypt the message
-void decrypt(char* m, int n, long int* e)
-{
-   long int pt, ct, key = d[0], k;
-   int i = 0;
-   while(en[i] != -1)
-   {
-      ct = temp[i];
-      k = 1;
-      for(j = 0; j < key; j++)
-      {
-         k = k * ct;
-         k = k % n;
-      }
-      pt = k + 96;
-      m[i] = pt;
-      i++;
-   }
-   m[i] = -1;
-   cout << "\n\nTHE DECRYPTED MESSAGE IS\n";
-   for(i = 0; m[i] != -1; i++)
-      cout << m[i];
-
-  cout << endl;
-}
-
 int main(int argc, char* argv[]) {
+    srand(time(0));
     // Check for valid arguments
     if(argc != 4) {
         printf("Usage %s ip port type('UDP' or 'TCP')\n", argv[0]);
@@ -132,22 +35,30 @@ int main(int argc, char* argv[]) {
     }
     // Symmetric key
     char symmetric_key [2];
-    symmetric_key[0] = 0x95;
-    symmetric_key[1] = 0x6A;
+    symmetric_key[0] = getRandomChar();
+    symmetric_key[1] = getRandomChar();
 
-    // Prime number
-    p1 = 52267;
-    p2 = 67261;
+    cout << "The symmetric key is " << symmetric_key[0] - 0 << " " << symmetric_key[1] - 0 << endl;
 
-    my_n = p1 * p2;
-    t = (p1 - 1) * (p2 - 1);
+    int prime1 = getPrimeNumber();
+    int prime2 = getPrimeNumber();
 
-    // Generate the encryption key
-    encryption_key(t);
+    cout << "Prime Numbers: " << prime1 << ", " << prime2 << endl;
 
-    encrypt(symmetric_key);
+    int my_n = prime1 * prime2;
+    int my_z = (prime1 - 1) * (prime2 - 1);
+    int my_e = getRelativePrime(my_n, my_z);
+    int my_d = getExactDivisible(my_e, my_z);
 
-    decrypt(symmetric_key);
+    cout << "N: " << my_n << ", Z: " << my_z << ", E: " << my_e << ", D: " << my_d << endl;
+
+    char keyboard_n[2];
+    char keyboard_e[2];
+    convertToChar(my_n, keyboard_n);
+    convertToChar(my_e, keyboard_e);
+
+    char computer_n[2] = {0};
+    char computer_e[2] = {0};
 
     // Set up socket1
     char* server_ip = argv[1];
@@ -174,6 +85,9 @@ int main(int argc, char* argv[]) {
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = inet_addr(server_ip);
     server_address.sin_port = htons(port);
+
+    struct sockaddr_in client_address;
+    unsigned int return_len;
 
     if(type == "TCP"){ 
         // Initialize socket
@@ -205,13 +119,46 @@ int main(int argc, char* argv[]) {
     streampos position = ifs.tellg();
 
     // Send (n,e) 
-    if(type == "TCP")
-        send(socket_id, my_n, sizeof(my_n), 0);
-        send(socket_id, my_e, sizeof(my_e), 0);
-    else
-        sendto(socket_id, my_n, sizeof(my_n), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
-        sendto(socket_id, my_e, sizeof(my_e), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+    if(type == "TCP"){
+        send(socket_id, keyboard_n, sizeof(keyboard_n), 0);
+        send(socket_id, keyboard_e, sizeof(keyboard_e), 0);
+    }
+    else{
+        sendto(socket_id, keyboard_n, sizeof(keyboard_n), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+        sendto(socket_id, keyboard_e, sizeof(keyboard_e), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+    }
+    if(type == "TCP"){
+        read(socket_id, computer_n, sizeof(computer_n));
+        read(socket_id, computer_e, sizeof(computer_e));
+    }
+    else{
+        recvfrom(socket_id, computer_n, sizeof(computer_n), 0, (struct sockaddr *)&client_address, &return_len);
+    }
 
+    char f_encrypted_m[2] = {0};
+    char s_encrypted_m[2] = {0};
+    
+    cout << "My N is " << my_n << endl;
+    cout << "My E is " << my_e << endl;
+    encrypt(symmetric_key, f_encrypted_m, my_n, my_d, 2);
+    encrypt(f_encrypted_m, s_encrypted_m, my_n, my_e, 2);
+    cout << "Computer N is " << convertToInt(computer_n) << endl;
+    cout << "Computer E is " << convertToInt(computer_e) << endl;
+    // encrypt(f_encrypted_m,s_encrypted_m, convertToInt(computer_n), convertToInt(computer_e), 2);
+
+    // if(type == "TCP"){
+    //     send(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0);
+    // }
+    // else{
+    //     sendto(socket_id, s_encrypted_m, sizeof(s_encrypted_m), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+    // }
+
+    if(type == "TCP"){
+        send(socket_id, f_encrypted_m, sizeof(f_encrypted_m), 0);
+    }
+    else{
+        sendto(socket_id, f_encrypted_m, sizeof(f_encrypted_m), 0, (struct sockaddr *)&server_address, sizeof(struct sockaddr_in));
+    }
     // Create buffer to hold the message to send
     char keyToSend = 0;
     char actionToSend = 0;

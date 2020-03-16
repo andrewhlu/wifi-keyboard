@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstring>
 #include <stdlib.h>
-#include <ctime>
 using namespace std;
 
 char getRandomChar(){
@@ -39,7 +38,6 @@ bool isPrime(int num) {
 }
 
 int getPrimeNumber() {
-    srand(time(0));
     int primeNum = rand() % 100;
     while(!isPrime(primeNum)) {
         primeNum--;
@@ -60,7 +58,6 @@ int gcd(int a, int b) {
 }
 
 int getRelativePrime(int n, int z) {
-    srand(time(0));
     int relativeNum = rand() % n;
     while(gcd(relativeNum, z) > 1) {
         relativeNum--;
@@ -77,26 +74,26 @@ int getExactDivisible(int e, int z) {
 }
 
 // Function to encrypt the message
-void encrypt(char* message, int* encrypted, int n, int key, int len) {
+void encrypt(unsigned char* message, unsigned char* encrypted, int n, int key, int len) {
     for(int i = 0; i < len; i++) {
         int k = 1;
 
         for(int j = 0; j < key; j++) {
             k = (k * (message[i] - 0)) % n;
         }
-
+        cout << k << endl;
         encrypted[i] = k;
     }
 
     cout << "Encrypted Message: '";
     for(int i = 0; i < len; i++) {
-        cout << encrypted[i] << " ";
+        cout << encrypted[i] - 0 << " ";
     }
     cout << "'" << endl;
 }
 
 // Function to decrypt the message
-void decrypt(int* encrypted, char* decrypted, int n, int key, int len) {
+void decrypt(unsigned char* encrypted, unsigned char* decrypted, int n, int key, int len) {
     for(int i = 0; i < len; i++) {
         int k = 1;
 
@@ -114,17 +111,17 @@ void decrypt(int* encrypted, char* decrypted, int n, int key, int len) {
     cout << "'" << endl;
 }
 
-// int main(int argc, char *argv[]) {
-//     int newE = 885;
-//     int newN = 2581;
-//     int newD = 2077;
+int main(int argc, char *argv[]) {
+    int newE = 833;
+    int newN = 1541;
+    int newD = 821;
 
-//     char message[1024] = "abcdefghijklmnop";
-//     int encrypted[1024] = {0};
-//     char decrypted[1024];
-//     memset(encrypted, 0, sizeof(encrypted));
-//     memset(decrypted, 0, sizeof(decrypted));
+    unsigned char message[1024] = "abcdefghijklmnop";
+    unsigned char encrypted[1024] = {0};
+    unsigned char decrypted[1024];
+    memset(encrypted, 0, sizeof(encrypted));
+    memset(decrypted, 0, sizeof(decrypted));
 
-//     encrypt(message, encrypted, newN, newE, strlen(message));
-//     decrypt(encrypted, decrypted, newN, newD, strlen(message));
-// }
+    encrypt(message, encrypted, newN, newE, 16);
+    decrypt(encrypted, decrypted, newN, newD, 16);
+}
